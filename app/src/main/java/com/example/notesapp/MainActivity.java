@@ -7,10 +7,13 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.PopupMenu;
 
 import com.firebase.ui.firestore.FirestoreRecyclerOptions;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.Query;
@@ -22,6 +25,9 @@ public class MainActivity extends AppCompatActivity {
     FloatingActionButton addNoteBtn;
     RecyclerView recyclerView;
     ImageButton menuBtn;
+
+
+    Button pinBtn, folderBtn;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -30,6 +36,25 @@ public class MainActivity extends AppCompatActivity {
         addNoteBtn = findViewById(R.id.floatingActionButton);
         recyclerView = findViewById(R.id.recycler_view);
         menuBtn = findViewById(R.id.menu_btn);
+
+        pinBtn = findViewById(R.id.pin_btn);
+        folderBtn = findViewById(R.id.folderBtn);
+
+        folderBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, AllFolderActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        pinBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, PinnedActivity.class);
+                startActivity(intent);
+            }
+        });
 
         addNoteBtn.setOnClickListener((view -> startActivity(new Intent(MainActivity.this, NotesActivity.class))));
 

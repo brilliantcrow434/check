@@ -47,11 +47,8 @@ public class NotesActivity extends AppCompatActivity {
         docId = getIntent().getStringExtra("docId");
 
         //receiving the data
-        isEditMode = false;
 
-        if(docId != null && !docId.isEmpty()){
-            isEditMode = true;
-        }
+        isEditMode = docId != null && !docId.isEmpty();
 
         if(isEditMode){
             delButton.setVisibility(View.VISIBLE);

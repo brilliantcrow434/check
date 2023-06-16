@@ -20,9 +20,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.firebase.ui.firestore.FirestoreRecyclerAdapter;
 import com.firebase.ui.firestore.FirestoreRecyclerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 
 public class NotesAdapter extends FirestoreRecyclerAdapter<NoteModal, NotesAdapter.MyViewHolder> {
 
@@ -57,8 +59,10 @@ public class NotesAdapter extends FirestoreRecyclerAdapter<NoteModal, NotesAdapt
                 final String docId = getSnapshots().getSnapshot(position).getId();
 
                 // Create menu items programmatically
-                popupMenu.getMenu().add(Menu.NONE, 1, 1, "Pin");
+                popupMenu.getMenu().add(Menu.NONE, 1, 1, "Pin/Unpin");
                 popupMenu.getMenu().add(Menu.NONE, 2, 2, "Delete");
+                popupMenu.getMenu().add(Menu.NONE, 3, 3, "Move");
+                popupMenu.getMenu().add(Menu.NONE, 4, 4, "Share");
 
                 // Set a click listener for the popup menu items
                 popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
@@ -67,27 +71,29 @@ public class NotesAdapter extends FirestoreRecyclerAdapter<NoteModal, NotesAdapt
                         int itemId = item.getItemId();
                         if (itemId == 1) {
                             // Handle Pin item click
-                            // Perform pin action
-
                             DocumentReference documentReference = ReferenceHelper.getCollectionReferenceForNotes().document(docId);
-                            documentReference.update("pinned", true)
-                                    .addOnCompleteListener(new OnCompleteListener<Void>() {
-                                        @Override
-                                        public void onComplete(@NonNull Task<Void> task) {
-                                            if (task.isSuccessful()) {
-                                                ToastHelper.showToast(context, "Note pinned successfully");
-
-                                            } else {
-                                                ToastHelper.showToast(context, "Failed to pin note");
-                                            }
-                                        }
-                                    });
-                            noteAdapter.startListening(); // Call this after deletion or pinning
-
-
-                            return true;
-
-
+                            documentReference.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                                @Override
+                                public void onSuccess(DocumentSnapshot documentSnapshot) {
+                                    boolean isPinned = documentSnapshot.getBoolean("pinned");
+                                    boolean newPinnedStatus = !isPinned;
+                                    documentReference.update("pinned", newPinnedStatus)
+                                            .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                @Override
+                                                public void onComplete(@NonNull Task<Void> task) {
+                                                    if (task.isSuccessful()) {
+                                                        if (newPinnedStatus) {
+                                                            ToastHelper.showToast(context, "Note pinned successfully");
+                                                        } else {
+                                                            ToastHelper.showToast(context, "Note unpinned successfully");
+                                                        }
+                                                    } else {
+                                                        ToastHelper.showToast(context, "Failed to update pinned status");
+                                                    }
+                                                }
+                                            });
+                                }
+                            });
                         } else if (itemId == 2) {
                             // Handle Delete item click
                             DocumentReference documentReference = ReferenceHelper.getCollectionReferenceForNotes().document(docId);
@@ -101,12 +107,22 @@ public class NotesAdapter extends FirestoreRecyclerAdapter<NoteModal, NotesAdapt
                                     }
                                 }
                             });
+                        } else if (itemId == 4) {
+                            // Handle Share item click
+                            NoteModal note = getItem(position);
 
-                            noteAdapter.startListening(); // Call this after deletion or pinning
+                            Intent intent = new Intent();
+                            intent.setAction(Intent.ACTION_SEND);
+                            intent.putExtra(Intent.EXTRA_SUBJECT, note.getNoteTitle());
+                            intent.putExtra(Intent.EXTRA_TEXT, note.getNoteContent());
+                            intent.setType("text/plain");
 
-                            return true;
+                            if (intent.resolveActivity(context.getPackageManager()) != null) {
+                                context.startActivity(intent);
+                            }
                         }
-                        return false;
+
+                        return true;
                     }
                 });
 
@@ -116,7 +132,6 @@ public class NotesAdapter extends FirestoreRecyclerAdapter<NoteModal, NotesAdapt
                 return true;
             }
         });
-
 
 
         holder.itemView.setOnClickListener(view -> {
